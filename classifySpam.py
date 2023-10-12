@@ -14,7 +14,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.metrics import roc_auc_score
 
 
-def aucCV(features, labels):
+def aucCV(features,labels):
     # model = GaussianNB()
     model = make_pipeline(SimpleImputer(missing_values=-1, strategy='mean'),
                           GaussianNB())
@@ -23,7 +23,7 @@ def aucCV(features, labels):
     return scores
 
 
-def predictTest(trainFeatures, trainLabels, testFeatures):
+def predictTest(trainFeatures,trainLabels,testFeatures):
     # model = GaussianNB()
     model = make_pipeline(SimpleImputer(missing_values=-1, strategy='mean'),
                           GaussianNB())
