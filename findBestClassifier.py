@@ -84,3 +84,4 @@ if __name__ == "__main__":
     print('\nFeature 1: ', feature1, '\tFeature 2: ', feature2)
     print(f'Best model: {model_labels[best_model]}')
     print(f'Best accuracy: {best_accuracy}')
+    
