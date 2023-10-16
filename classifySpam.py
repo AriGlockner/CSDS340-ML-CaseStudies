@@ -4,7 +4,6 @@ Demo of 10-fold cross-validation using Gaussian naive Bayes on spam data
 
 @author: Kevin S. Xu
 """
-
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.naive_bayes import GaussianNB
@@ -18,9 +17,7 @@ def aucCV(features,labels):
     # model = GaussianNB()
     model = make_pipeline(SimpleImputer(missing_values=-1, strategy='mean'),
                           GaussianNB())
-    scores = cross_val_score(model, features, labels, cv=10, scoring='roc_auc')
-
-    return scores
+    return cross_val_score(model, features, labels, cv=10, scoring='roc_auc')
 
 
 def predictTest(trainFeatures,trainLabels,testFeatures):
@@ -31,9 +28,7 @@ def predictTest(trainFeatures,trainLabels,testFeatures):
 
     # Use predict_proba() rather than predict() to use probabilities rather
     # than estimated class labels as outputs
-    testOutputs = model.predict_proba(testFeatures)[:, 1]
-
-    return testOutputs
+    return model.predict_proba(testFeatures)[:, 1]
 
 
 # Run this code only if being used as a script, not being imported
@@ -42,6 +37,7 @@ if __name__ == "__main__":
     data = np.loadtxt('spamTrain1.csv', delimiter=',')
 
     # Randomly shuffle rows of data set then separate labels (last column)
+    np.random.seed(1)
     shuffleIndex = np.arange(np.shape(data)[0])
     np.random.shuffle(shuffleIndex)
     data = data[shuffleIndex, :]

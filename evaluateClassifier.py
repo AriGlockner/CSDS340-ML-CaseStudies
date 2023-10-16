@@ -16,9 +16,9 @@ testDataFilename = 'spamTrain2.csv'
 #testDataFilename = 'spamTest.csv'
 
 def tprAtFPR(labels,outputs,desiredFPR):
-    fpr,tpr,thres = roc_curve(labels,outputs)
+    fpr, tpr, thres = roc_curve(labels,outputs)
     # True positive rate for highest false positive rate < 0.01
-    maxFprIndex = np.where(fpr<=desiredFPR)[0][-1]
+    maxFprIndex = np.where(fpr <= desiredFPR)[0][-1]
     fprBelow = fpr[maxFprIndex]
     fprAbove = fpr[maxFprIndex+1]
     # Find TPR at exactly desired FPR by linear interpolation
@@ -26,7 +26,7 @@ def tprAtFPR(labels,outputs,desiredFPR):
     tprAbove = tpr[maxFprIndex+1]
     tprAt = ((tprAbove-tprBelow)/(fprAbove-fprBelow)*(desiredFPR-fprBelow) 
              + tprBelow)
-    return tprAt,fpr,tpr
+    return tprAt, fpr, tpr
 
 trainData = np.loadtxt(trainDataFilename,delimiter=',')
 testData = np.loadtxt(testDataFilename,delimiter=',')
