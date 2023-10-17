@@ -18,6 +18,8 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
+import evaluateClassifier
+
 if __name__ == "__main__":
     # Read/Split the data from the file
     data = np.loadtxt('spamTrain1.csv', delimiter=',')
@@ -26,8 +28,9 @@ if __name__ == "__main__":
     # TODO: Fix for a specific feature and label
     # TODO: Update with a loop to test all features and labels -> Maybe if not too big
     # TODO: Change 1st value in here to test a particular feature (0-29)
-    feature1 = 0
-    feature2 = 1
+    # Initially feature1 = 0 and feature2 = 1
+    feature1 = 2
+    feature2 = 3
     features = data[:, feature1:feature2]
     labels = data[:, -1]
 
@@ -61,25 +64,43 @@ if __name__ == "__main__":
     model_labels = ['Perceptron', 'Naive Bayes', 'Adaline', 'Logistic Regression', 'SVM - Linear', 'SVM - poly',
                     'SVM - rbf', 'SVM - sigmoid', 'Decision Tree', 'K-Nearest Neighbors']
     best_accuracy = 0
+    best_tpr = 0
     best_model = 0
 
     # Train and Test each model
     for i in range(len(models)):
         # Train the model
         model = models[i]
-        model.fit(train_features, train_labels)
+        model.fit(train_features.copy(), train_labels.copy())
 
+        # TODO: DO NOT USE PREDICT FUNCTION FOR SCIKIT-LEARN
         # Test the model
-        testOutputs = model.predict(test_features)
+        print(f'\nModel: {model_labels[i]}')
+        testOutputs = evaluateClassifier.predictTest(train_features.copy(), train_labels.copy(), test_features.copy())
+        # model.predict(test_features)
+
+        # Calculate the AUC
         aucTestRun = roc_auc_score(test_labels, testOutputs)
         aucTestRun = max(aucTestRun, 1 - aucTestRun)
         print(f'Test set AUC: {aucTestRun}')
+
+        # Calculate the TPR
+        tprAtDesiredFPR, fpr, tpr = evaluateClassifier.tprAtFPR(test_labels, testOutputs, 0.01)
+        print(f'TPR at FPR = 0.01: {tprAtDesiredFPR}')
 
         # Update the best model
         if aucTestRun > best_accuracy:
             best_accuracy = aucTestRun
             best_model = i
+            best_tpr = tprAtDesiredFPR
+        if aucTestRun == best_accuracy:
+            if tprAtDesiredFPR > best_tpr:
+                best_accuracy = aucTestRun
+                best_model = i
+            elif tprAtDesiredFPR == best_tpr:
+                print('Same accuracy and TPR')
 
+    # TODO: Figure out why all the models have the same output
     # Get the best model
     print('\nFeature 1: ', feature1, '\tFeature 2: ', feature2)
     print(f'Best model: {model_labels[best_model]}')

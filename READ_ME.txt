@@ -8,3 +8,4 @@ Steps to Do:
 - Finalize our classifier and sync it up with the professor's code
 
 Tests / Results:
+See the Accuracy Data spreadsheet in the Github folder
