@@ -20,6 +20,18 @@ from sklearn.tree import DecisionTreeClassifier
 
 import evaluateClassifier
 
+
+def bootstrap_data(initial_data, number_of_samples):
+    """
+    Bootstrap the data. This function will create a new data set by randomly sampling from the initial data set with
+    replacement. The new data set will be the same size as the initial data set and will be used to train the model.
+    :param initial_data: the initial data set
+    :param number_of_samples: the number of samples to be taken from the initial data set
+    :return: a new data set
+    """
+    return [initial_data[np.random.randint(0, len(initial_data))] for _ in range(number_of_samples)]
+
+
 if __name__ == "__main__":
     # Read/Split the data from the file
     data = np.loadtxt('spamTrain1.csv', delimiter=',')
