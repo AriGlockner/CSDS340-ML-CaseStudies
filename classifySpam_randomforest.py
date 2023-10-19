@@ -38,6 +38,18 @@ def predictTest(trainFeatures,trainLabels,testFeatures):
     return testOutputs
 
 
+def fill_empty_values(data):
+    """
+    Fill empty values with the mean of the column
+    :param data:
+    :return:
+    """
+    # Fill missing values with the mean of the column
+    imp = SimpleImputer(missing_values=-1, strategy='mean')
+    imp.fit(data)
+    return imp.transform(data)
+
+
 # Run this code only if being used as a script, not being imported
 if __name__ == "__main__":
     data = np.loadtxt('spamTrain1.csv',delimiter=',')
@@ -45,7 +57,7 @@ if __name__ == "__main__":
     shuffleIndex = np.arange(np.shape(data)[0])
     np.random.shuffle(shuffleIndex)
     data = data[shuffleIndex,:]
-    features = data[:,:-1]
+    features = fill_empty_values(data[:,:-1])
     labels = data[:,-1]
     
     # Evaluating classifier accuracy using 10-fold cross-validation
