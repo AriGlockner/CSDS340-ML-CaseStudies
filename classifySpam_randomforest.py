@@ -25,6 +25,7 @@ def aucCV(features,labels):
     
     return scores
 
+
 def predictTest(trainFeatures,trainLabels,testFeatures):
     # model = GaussianNB()
     model = make_pipeline(SimpleImputer(missing_values=-1, strategy='mean'),
@@ -61,8 +62,7 @@ if __name__ == "__main__":
     labels = data[:,-1]
     
     # Evaluating classifier accuracy using 10-fold cross-validation
-    print("10-fold cross-validation mean AUC: ",
-          np.mean(aucCV(features,labels)))
+    print("10-fold cross-validation mean AUC: ", np.mean(aucCV(features,labels)))
     
     # Arbitrarily choose all odd samples as train set and all even as test set
     # then compute test set AUC for model trained only on fixed train set
