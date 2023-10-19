@@ -74,14 +74,13 @@ if __name__ == "__main__":
     for i in range(len(models)):
         # Train the model
         model = models[i]
+        # TODO: Use Random Forest or Boosting here to generate multiple models instead of using the train set
         model.fit(train_features.copy(), train_labels.copy())
 
         # TODO: DO NOT USE PREDICT FUNCTION FOR SCIKIT-LEARN
         # Test the model
         print(f'\nModel: {model_labels[i]}')
         # testOutputs = evaluateClassifier.predictTest(train_features.copy(), train_labels.copy(), test_features.copy())
-
-        # TODO: Use Random Forest or Boosting here to generate multiple models
         testOutputs = 0 # fill this in properly
 
         # Calculate the AUC
