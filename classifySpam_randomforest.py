@@ -7,7 +7,6 @@ Demo of 10-fold cross-validation using Gaussian naive Bayes on spam data
 
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.naive_bayes import GaussianNB
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import cross_val_score
@@ -18,25 +17,21 @@ from evaluateClassifier import tprAtFPR
 
 
 def aucCV(features,labels):
-    # model = GaussianNB()
+    # model = RandomForestClassifier()
     model = make_pipeline(SimpleImputer(missing_values=-1, strategy='mean'),
                           RandomForestClassifier())
-    scores = cross_val_score(model,features,labels,cv=10,scoring='roc_auc')
-    
-    return scores
+    return cross_val_score(model,features,labels,cv=10,scoring='roc_auc')
 
 
 def predictTest(trainFeatures,trainLabels,testFeatures):
-    # model = GaussianNB()
+    # model = RandomForestClassifier()
     model = make_pipeline(SimpleImputer(missing_values=-1, strategy='mean'),
                           RandomForestClassifier())
     model.fit(trainFeatures,trainLabels)
     
     # Use predict_proba() rather than predict() to use probabilities rather
     # than estimated class labels as outputs
-    testOutputs = model.predict_proba(testFeatures)[:,1]
-    
-    return testOutputs
+    return model.predict_proba(testFeatures)[:,1]
 
 
 def fill_empty_values(data):
