@@ -14,6 +14,9 @@ from sklearn.model_selection import cross_val_score
 from sklearn.metrics import roc_auc_score
 from sklearn.ensemble import RandomForestClassifier
 
+from evaluateClassifier import tprAtFPR
+
+
 def aucCV(features,labels):
     # model = GaussianNB()
     model = make_pipeline(SimpleImputer(missing_values=-1, strategy='mean'),
@@ -33,7 +36,8 @@ def predictTest(trainFeatures,trainLabels,testFeatures):
     testOutputs = model.predict_proba(testFeatures)[:,1]
     
     return testOutputs
-    
+
+
 # Run this code only if being used as a script, not being imported
 if __name__ == "__main__":
     data = np.loadtxt('spamTrain1.csv',delimiter=',')
@@ -56,7 +60,11 @@ if __name__ == "__main__":
     testLabels = labels[1::2]
     testOutputs = predictTest(trainFeatures,trainLabels,testFeatures)
     print("Test set AUC: ", roc_auc_score(testLabels,testOutputs))
-    
+
+    # TPR at FPR = 0.01
+    tprAtDesiredFPR, fpr, tpr = tprAtFPR(testLabels,testOutputs,0.01)
+    print("TPR at FPR = 0.01: ", tprAtDesiredFPR)
+
     # Examine outputs compared to labels
     sortIndex = np.argsort(testLabels)
     nTestExamples = testLabels.size
