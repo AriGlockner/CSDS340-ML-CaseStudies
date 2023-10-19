@@ -10,6 +10,7 @@ Things to do:
 import math
 
 import numpy as np
+from sklearn import model_selection
 from sklearn.linear_model import Perceptron
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
@@ -17,19 +18,9 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import BaggingClassifier
 
 import evaluateClassifier
-
-
-def bootstrap_data(initial_data, number_of_samples):
-    """
-    Bootstrap the data. This function will create a new data set by randomly sampling from the initial data set with
-    replacement. The new data set will be the same size as the initial data set and will be used to train the model.
-    :param initial_data: the initial data set
-    :param number_of_samples: the number of samples to be taken from the initial data set
-    :return: a new data set
-    """
-    return [initial_data[np.random.randint(0, len(initial_data))] for _ in range(number_of_samples)]
 
 
 if __name__ == "__main__":
@@ -41,8 +32,8 @@ if __name__ == "__main__":
     # TODO: Update with a loop to test all features and labels -> Maybe if not too big
     # TODO: Change 1st value in here to test a particular feature (0-29)
     # Initially feature1 = 0 and feature2 = 1
-    feature1 = 2
-    feature2 = 3
+    feature1 = 0
+    feature2 = 1
     features = data[:, feature1:feature2]
     labels = data[:, -1]
 
@@ -88,8 +79,10 @@ if __name__ == "__main__":
         # TODO: DO NOT USE PREDICT FUNCTION FOR SCIKIT-LEARN
         # Test the model
         print(f'\nModel: {model_labels[i]}')
-        testOutputs = evaluateClassifier.predictTest(train_features.copy(), train_labels.copy(), test_features.copy())
-        # model.predict(test_features)
+        # testOutputs = evaluateClassifier.predictTest(train_features.copy(), train_labels.copy(), test_features.copy())
+
+        # TODO: Use Random Forest or Boosting here to generate multiple models
+        testOutputs = 0 # fill this in properly
 
         # Calculate the AUC
         aucTestRun = roc_auc_score(test_labels, testOutputs)
