@@ -10,24 +10,23 @@ import matplotlib.pyplot as plt
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import cross_val_score
-from sklearn.metrics import roc_auc_score
-from sklearn.ensemble import RandomForestClassifier
+# from sklearn.metrics import roc_auc_score
+from sklearn.ensemble import RandomForestClassifier, BaggingClassifier, ExtraTreesClassifier, AdaBoostClassifier
 
 from evaluateClassifier import tprAtFPR
 
 
-def aucCV(features,labels):
+def aucCV(features,labels,classifier=RandomForestClassifier()):
     # model = RandomForestClassifier()
     model = make_pipeline(SimpleImputer(missing_values=-1, strategy='mean'),
-                          RandomForestClassifier())
+                          classifier)
     return cross_val_score(model,features,labels,cv=10,scoring='roc_auc')
 
 
-def predictTest(trainFeatures,trainLabels,testFeatures):
+def predictTest(trainFeatures,trainLabels,testFeatures,classifier=RandomForestClassifier()):
     # model = RandomForestClassifier()
-    model = make_pipeline(SimpleImputer(missing_values=-1, strategy='mean'),
-                          RandomForestClassifier())
-    model.fit(trainFeatures,trainLabels)
+    model = make_pipeline(SimpleImputer(missing_values=-1, strategy='mean'), RandomForestClassifier())
+    model.fit(trainFeatures, trainLabels)
     
     # Use predict_proba() rather than predict() to use probabilities rather
     # than estimated class labels as outputs
@@ -65,12 +64,22 @@ if __name__ == "__main__":
     trainLabels = labels[0::2]
     testFeatures = features[1::2,:]
     testLabels = labels[1::2]
-    testOutputs = predictTest(trainFeatures,trainLabels,testFeatures)
-    print("Test set AUC: ", roc_auc_score(testLabels,testOutputs))
 
-    # TPR at FPR = 0.01
-    tprAtDesiredFPR, fpr, tpr = tprAtFPR(testLabels,testOutputs,0.01)
-    print("TPR at FPR = 0.01: ", tprAtDesiredFPR)
+    classifiers = [RandomForestClassifier(), BaggingClassifier(), ExtraTreesClassifier(), AdaBoostClassifier()]
+    classifier_labels = ['Random Forest', 'Bagging/Bootstrap', 'Extra Trees', 'AdaBoost']
+
+    for i in range(len(classifiers)):
+        print(f'\nClassifier: {classifier_labels[i]}')
+
+        # Train the model
+        testOutputs = predictTest(trainFeatures, trainLabels, testFeatures, classifiers[i])
+
+        # Calculate the AUC
+        print("Test set AUC: ", np.mean(aucCV(testFeatures, testLabels, classifiers[i])))
+
+        # Calculate the TPR at FPR = 0.01
+        tprAtDesiredFPR, fpr, tpr = tprAtFPR(testLabels,testOutputs,0.01)
+        print("TPR at FPR = 0.01: ", tprAtDesiredFPR)
 
     # Examine outputs compared to labels
     sortIndex = np.argsort(testLabels)
