@@ -4,16 +4,18 @@ Demo of 10-fold cross-validation using Gaussian naive Bayes on spam data
 
 @author: Kevin S. Xu
 """
+import copy
 
 import numpy as np
 import matplotlib.pyplot as plt
+import sklearn
+from sklearn import base, clone
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import cross_val_score
 # from sklearn.metrics import roc_auc_score
 from sklearn.ensemble import RandomForestClassifier, BaggingClassifier, ExtraTreesClassifier, AdaBoostClassifier, \
     GradientBoostingClassifier, VotingClassifier, StackingClassifier
-
 from evaluateClassifier import tprAtFPR
 
 random_state = 1
@@ -72,7 +74,8 @@ if __name__ == "__main__":
     classifiers = [RandomForestClassifier(random_state=random_state, criterion='gini'),
                    RandomForestClassifier(random_state=random_state, criterion='entropy'),
                    RandomForestClassifier(random_state=random_state, criterion='log_loss'),
-                   BaggingClassifier(random_state=random_state), ExtraTreesClassifier(random_state=random_state),
+                   BaggingClassifier(random_state=random_state),
+                   ExtraTreesClassifier(random_state=random_state),
                    AdaBoostClassifier(random_state=random_state, learning_rate=0.1),
                    AdaBoostClassifier(random_state=random_state),
                    GradientBoostingClassifier(random_state=random_state, loss='log_loss'),
@@ -80,7 +83,7 @@ if __name__ == "__main__":
 
     # The labels for the classifiers
     classifier_labels = ['Random Forest - gini', 'Random Forest - entropy', 'Random Forest - log loss',
-                         'Bagging/Bootstrap', 'Extra Trees', 'Adaboost - 0.0 learning rate', 'AdaBoost',
+                         'Bagging/Bootstrap', 'Extra Trees', 'Adaboost - 0.1 learning rate', 'AdaBoost',
                          'Gradient Boosting - log loss, friedman_mse', 'Gradient Boosting - exponential, friedman_mse',
                          'Gradient Boosting - log loss, mse', 'Gradient Boosting - exponential, mse', 'Voting',
                          'Stacking']
@@ -95,24 +98,43 @@ if __name__ == "__main__":
     for i in range(len(classifiers)):
         print(f'\nClassifier: {classifier_labels[i]}')
 
-        # Train the model
-        testOutputs = predictTest(trainFeatures, trainLabels, testFeatures, classifiers[i])
+        # Data for storing the average AUC and TPR at FPR = 0.01
+        n_iter = 10
+        auc_avg = 0
+        tpr_avg = 0
 
-        # Calculate the AUC
-        auc = np.mean(aucCV(testFeatures, testLabels, classifiers[i]))
-        print("Test set AUC: ", auc)
+        # Calculate the sums of the AUC and TPR at FPR = 0.01
+        for j in range(n_iter):
+            classifier = copy.deepcopy(classifiers[i])
 
-        if auc > best_auc:
-            best_auc = auc
+            # Train the model
+            testOutputs = predictTest(trainFeatures, trainLabels, testFeatures, classifier)
+
+            # Calculate the AUC
+            auc = np.mean(aucCV(testFeatures, testLabels, classifier))
+            auc_avg += auc
+
+            # Calculate the TPR at FPR = 0.01
+            tprAtDesiredFPR, fpr, tpr = tprAtFPR(testLabels, testOutputs, 0.01)
+            tpr_avg += tprAtDesiredFPR
+
+        # Calculate the average AUC and TPR at FPR = 0.01
+        auc_avg /= n_iter
+        tpr_avg /= n_iter
+
+        # Update the best auc model
+        if auc_avg > best_auc:
+            best_auc = auc_avg
             best_auc_model = classifier_labels[i]
 
-        # Calculate the TPR at FPR = 0.01
-        tprAtDesiredFPR, fpr, tpr = tprAtFPR(testLabels, testOutputs, 0.01)
-        print("TPR at FPR = 0.01: ", tprAtDesiredFPR)
-
-        if tprAtDesiredFPR > best_tpr:
-            best_tpr = tprAtDesiredFPR
+        # Update the best tpr model
+        if tpr_avg > best_tpr:
+            best_tpr = tpr_avg
             best_tpr_model = classifier_labels[i]
+
+        # Print the average AUC and TPR at FPR = 0.01 for the current model
+        print(f'Average test set AUC: {auc_avg}')
+        print(f'Average TPR at FPR = 0.01: {tpr_avg}')
 
     # Summary
     print(f'\nBest AUC: {best_auc} for {best_auc_model}')
