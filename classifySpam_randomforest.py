@@ -30,7 +30,7 @@ def aucCV(features, labels, classifier=RandomForestClassifier(random_state=rando
 
 def predictTest(trainFeatures, trainLabels, testFeatures, classifier=RandomForestClassifier()):
     # model = RandomForestClassifier()
-    model = make_pipeline(SimpleImputer(missing_values=-1, strategy='mean'), RandomForestClassifier())
+    model = make_pipeline(SimpleImputer(missing_values=-1, strategy='mean'), classifier)
     model.fit(trainFeatures, trainLabels)
 
     # Use predict_proba() rather than predict() to use probabilities rather
