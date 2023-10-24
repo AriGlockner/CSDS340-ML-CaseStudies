@@ -137,15 +137,3 @@ if __name__ == "__main__":
     # Summary
     print(f'\nBest AUC: {best_auc} for {best_auc_model}')
     print(f'Best TPR: {best_tpr} for {best_tpr_model}')
-
-    # Examine outputs compared to labels
-    sortIndex = np.argsort(testLabels)
-    nTestExamples = testLabels.size
-    plt.subplot(2, 1, 1)
-    plt.plot(np.arange(nTestExamples), testLabels[sortIndex], 'b.')
-    plt.xlabel('Sorted example number')
-    plt.ylabel('Target')
-    plt.subplot(2, 1, 2)
-    plt.plot(np.arange(nTestExamples), testOutputs[sortIndex], 'r.')
-    plt.xlabel('Sorted example number')
-    plt.ylabel('Output (predicted target)')

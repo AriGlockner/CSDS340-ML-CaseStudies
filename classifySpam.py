@@ -6,6 +6,7 @@ Demo of 10-fold cross-validation using Gaussian naive Bayes on spam data
 """
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import make_pipeline
@@ -14,16 +15,16 @@ from sklearn.metrics import roc_auc_score
 
 
 def aucCV(features,labels):
-    # model = GaussianNB()
+    # model = GradientBoostingClassifier(random_state=1, loss='log_loss')
     model = make_pipeline(SimpleImputer(missing_values=-1, strategy='mean'),
-                          GaussianNB())
+                          GradientBoostingClassifier(random_state=1, loss='log_loss'))
     return cross_val_score(model, features, labels, cv=10, scoring='roc_auc')
 
 
 def predictTest(trainFeatures,trainLabels,testFeatures):
-    # model = GaussianNB()
+    # model = GradientBoostingClassifier(random_state=1, loss='log_loss')
     model = make_pipeline(SimpleImputer(missing_values=-1, strategy='mean'),
-                          GaussianNB())
+                          GradientBoostingClassifier(random_state=1, loss='log_loss'))
     model.fit(trainFeatures, trainLabels)
 
     # Use predict_proba() rather than predict() to use probabilities rather
