@@ -84,9 +84,7 @@ if __name__ == "__main__":
     # The labels for the classifiers
     classifier_labels = ['Random Forest - gini', 'Random Forest - entropy', 'Random Forest - log loss',
                          'Bagging/Bootstrap', 'Extra Trees', 'Adaboost - 0.1 learning rate', 'AdaBoost',
-                         'Gradient Boosting - log loss, friedman_mse', 'Gradient Boosting - exponential, friedman_mse',
-                         'Gradient Boosting - log loss, mse', 'Gradient Boosting - exponential, mse', 'Voting',
-                         'Stacking']
+                         'Gradient Boosting - log loss', 'Gradient Boosting - exponential']
 
     # Best accuracy and TPR
     best_auc = 0
