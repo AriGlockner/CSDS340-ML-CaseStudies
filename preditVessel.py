@@ -4,6 +4,8 @@ Vessel prediction using k-means clustering on standardized features. If the
 number of vessels is not specified, assume 20 vessels.
 @author: Kevin S. Xu
 """
+import math
+
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import adjusted_rand_score
@@ -12,18 +14,49 @@ from sklearn.cluster import KMeans
 
 
 def predictWithK(testFeatures, numVessels, trainFeatures=None, trainLabels=None):
+    testFeatures = convertToLabels(testFeatures)
+
     # Unsupervised prediction, so training data is unused
     scaler = StandardScaler()
     testFeatures = scaler.fit_transform(testFeatures)
     km = KMeans(n_clusters=numVessels, init='k-means++', n_init=10, random_state=100)
-    predVessels = km.fit_predict(testFeatures)
-    return predVessels
+
+    if trainFeatures is not None and trainLabels is not None:
+        trainFeatures = convertToLabels(trainFeatures)
+
+        # Use training data to fit the model
+        #trainFeatures = scaler.fit_transform(trainFeatures)
+        km.fit(trainFeatures, trainLabels)
+        return km.fit_predict(testFeatures)
+    else:
+        # Use only test data to fit the model
+        km.fit(testFeatures)
+
+    return km.fit_predict(testFeatures)
 
 
 def predictWithoutK(testFeatures, trainFeatures=None, trainLabels=None):
     # Unsupervised prediction, so training data is unused
     # Arbitrarily assume 20 vessels
-    return predictWithK(testFeatures, 20, trainFeatures, trainLabels)
+    return predictWithK(testFeatures=testFeatures, numVessels=20, trainFeatures=trainFeatures, trainLabels=trainLabels)
+
+
+def convertToLabels(features):
+    sog_index = 3
+    cog_index = 4
+
+    if features is not None:
+        for i in range(len(features)):
+            sog = features[i, sog_index]
+            cog = (features[i, cog_index] / 10.0) * math.pi / 180.0
+
+            vx = sog * math.cos(cog)
+            vy = sog * math.sin(cog)
+
+            features[i, sog_index] = vx
+            features[i, cog_index] = vy
+
+    return features
 
 
 # Run this code only if being used as a script, not being imported
@@ -57,3 +90,4 @@ if __name__ == "__main__":
     plt.title('Vessel tracks by cluster without K')
     plotVesselTracks(features[:, [2, 1]], labels)
     plt.title('Vessel tracks by label')
+    plt.show()
