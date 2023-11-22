@@ -14,23 +14,10 @@ from sklearn.cluster import KMeans
 
 
 def predictWithK(testFeatures, numVessels, trainFeatures=None, trainLabels=None):
-    testFeatures = convertToLabels(testFeatures)
-
     # Unsupervised prediction, so training data is unused
     scaler = StandardScaler()
     testFeatures = scaler.fit_transform(testFeatures)
     km = KMeans(n_clusters=numVessels, init='k-means++', n_init=10, random_state=100)
-
-    if trainFeatures is not None and trainLabels is not None:
-        trainFeatures = convertToLabels(trainFeatures)
-
-        # Use training data to fit the model
-        #trainFeatures = scaler.fit_transform(trainFeatures)
-        km.fit(trainFeatures, trainLabels)
-        return km.fit_predict(testFeatures)
-    else:
-        # Use only test data to fit the model
-        km.fit(testFeatures)
 
     return km.fit_predict(testFeatures)
 
