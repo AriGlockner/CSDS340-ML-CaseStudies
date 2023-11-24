@@ -127,7 +127,7 @@ if __name__ == "__main__":
     # %% Run prediction algorithms and check accuracy
 
     predVesselsWithK, predVesselsWithoutK = testUntrained(features, labels)
-    predVesselsWithK, predVesselsWithoutK = testTrained(features, labels)
+    # predVesselsWithK, predVesselsWithoutK = testTrained(features, labels)
 
     # %% Plot vessel tracks colored by prediction and actual labels
     plotVesselTracks(features[:, [2, 1]], predVesselsWithK)
