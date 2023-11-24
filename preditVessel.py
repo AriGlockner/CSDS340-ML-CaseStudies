@@ -11,15 +11,24 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import adjusted_rand_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
 
 
 def predictWithK(testFeatures, numVessels, trainFeatures=None, trainLabels=None):
     # Unsupervised prediction, so training data is unused
     scaler = StandardScaler()
     testFeatures = scaler.fit_transform(testFeatures)
-    km = KMeans(n_clusters=numVessels, init='k-means++', n_init=10, random_state=100)
 
-    return km.fit_predict(testFeatures)
+    if trainFeatures is None or trainLabels is None:
+        km = KMeans(n_clusters=numVessels, init='k-means++', n_init=10, random_state=100)
+        return km.fit_predict(testFeatures)
+
+    # Otherwise use the labels to train a random forest classifier
+    # and predict the labels of the test data
+    rf = RandomForestClassifier(n_estimators=100, random_state=100)
+    rf.fit(trainFeatures, trainLabels)
+    return rf.predict(testFeatures)
 
 
 def predictWithoutK(testFeatures, trainFeatures=None, trainLabels=None):
@@ -46,6 +55,63 @@ def convertToLabels(features):
     return features
 
 
+def testTrained(features, labels):
+    print('With Train Features/Labels:')
+    # Split data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.2, random_state=42)
+
+    '''
+    # Convert features to labels
+    X_train = convertToLabels(X_train)
+    X_test = convertToLabels(X_test)
+    '''
+
+    # Run prediction algorithms and check accuracy
+    # Prediction with specified number of vessels
+    numVessels = np.unique(y_train).size
+
+    # Supervised prediction --> training data is used
+    predVesselsWithK = predictWithK(X_test, numVessels, X_train, y_train)
+
+    ariWithK = adjusted_rand_score(y_test, predVesselsWithK)
+
+    # Prediction without specified number of vessels
+    # Unsupervised prediction --> training data is unused
+    predVesselsWithoutK = predictWithoutK(X_test, X_train, y_train)
+
+    predNumVessels = np.unique(predVesselsWithoutK).size
+    ariWithoutK = adjusted_rand_score(y_test, predVesselsWithoutK)
+
+    print(f'Adjusted Rand index given K = {numVessels}: {ariWithK}')
+    print(f'Adjusted Rand index for estimated K = {predNumVessels}: ' + f'{ariWithoutK}')
+
+    return predVesselsWithK, predVesselsWithoutK
+
+
+def testUntrained(features, labels):
+    print('No trainFeatures or trainLabels given:')
+    # Run prediction algorithms and check accuracy
+    # Prediction with specified number of vessels
+    numVessels = np.unique(labels).size
+
+    # Unsupervised prediction --> training data is unused
+    predVesselsWithK = predictWithK(features, numVessels)
+
+    ariWithK = adjusted_rand_score(labels, predVesselsWithK)
+
+    # Prediction without specified number of vessels
+    # Unsupervised prediction --> training data is unused
+    predVesselsWithoutK = predictWithoutK(features)
+
+    predNumVessels = np.unique(predVesselsWithoutK).size
+    ariWithoutK = adjusted_rand_score(labels, predVesselsWithoutK)
+
+    print(f'Adjusted Rand index given K = {numVessels}: {ariWithK}')
+    print(f'Adjusted Rand index for estimated K = {predNumVessels}: ' + f'{ariWithoutK}')
+
+    return predVesselsWithK, predVesselsWithoutK
+
+
 # Run this code only if being used as a script, not being imported
 if __name__ == "__main__":
     from utils import loadData, plotVesselTracks
@@ -59,16 +125,9 @@ if __name__ == "__main__":
     plt.title('All vessel tracks')
 
     # %% Run prediction algorithms and check accuracy
-    # Prediction with specified number of vessels
-    numVessels = np.unique(labels).size
-    predVesselsWithK = predictWithK(features, numVessels)
-    ariWithK = adjusted_rand_score(labels, predVesselsWithK)
-    # Prediction without specified number of vessels
-    predVesselsWithoutK = predictWithoutK(features)
-    predNumVessels = np.unique(predVesselsWithoutK).size
-    ariWithoutK = adjusted_rand_score(labels, predVesselsWithoutK)
-    print(f'Adjusted Rand index given K = {numVessels}: {ariWithK}')
-    print(f'Adjusted Rand index for estimated K = {predNumVessels}: ' + f'{ariWithoutK}')
+
+    predVesselsWithK, predVesselsWithoutK = testUntrained(features, labels)
+    predVesselsWithK, predVesselsWithoutK = testTrained(features, labels)
 
     # %% Plot vessel tracks colored by prediction and actual labels
     plotVesselTracks(features[:, [2, 1]], predVesselsWithK)
@@ -77,4 +136,3 @@ if __name__ == "__main__":
     plt.title('Vessel tracks by cluster without K')
     plotVesselTracks(features[:, [2, 1]], labels)
     plt.title('Vessel tracks by label')
-    plt.show()
