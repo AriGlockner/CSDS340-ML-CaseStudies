@@ -11,15 +11,24 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import adjusted_rand_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
 
 
 def predictWithK(testFeatures, numVessels, trainFeatures=None, trainLabels=None):
     # Unsupervised prediction, so training data is unused
     scaler = StandardScaler()
     testFeatures = scaler.fit_transform(testFeatures)
-    km = KMeans(n_clusters=numVessels, init='k-means++', n_init=10, random_state=100)
 
-    return km.fit_predict(testFeatures)
+    if trainFeatures is None or trainLabels is None:
+        km = KMeans(n_clusters=numVessels, init='k-means++', n_init=10, random_state=100)
+        return km.fit_predict(testFeatures)
+
+    # Otherwise use a RandomForestClassifier to predict the number of vessels
+    # and then use that number to predict the vessel labels
+    clf = RandomForestClassifier(n_estimators=int(numVessels), random_state=100)
+    clf.fit(trainFeatures, trainLabels)
+    return clf.predict(testFeatures)
 
 
 def predictWithoutK(testFeatures, trainFeatures=None, trainLabels=None):
@@ -77,4 +86,3 @@ if __name__ == "__main__":
     plt.title('Vessel tracks by cluster without K')
     plotVesselTracks(features[:, [2, 1]], labels)
     plt.title('Vessel tracks by label')
-    plt.show()
