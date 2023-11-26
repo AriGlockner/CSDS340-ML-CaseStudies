@@ -26,6 +26,7 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None, trainLabels=None)
 
     # Otherwise use the labels to train a random forest classifier
     # and predict the labels of the test data
+    trainFeatures = scaler.fit_transform(trainFeatures)
     rf = RandomForestClassifier(n_estimators=100, random_state=100)
     rf.fit(trainFeatures, trainLabels)
     return rf.predict(testFeatures)
@@ -127,7 +128,7 @@ if __name__ == "__main__":
     # %% Run prediction algorithms and check accuracy
 
     predVesselsWithK, predVesselsWithoutK = testUntrained(features, labels)
-    # predVesselsWithK, predVesselsWithoutK = testTrained(features, labels)
+    predVesselsWithK, predVesselsWithoutK = testTrained(features, labels)
 
     # %% Plot vessel tracks colored by prediction and actual labels
     plotVesselTracks(features[:, [2, 1]], predVesselsWithK)
