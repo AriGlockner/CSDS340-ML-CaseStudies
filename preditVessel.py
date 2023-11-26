@@ -20,6 +20,10 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None, trainLabels=None)
     scaler = StandardScaler()
     testFeatures = scaler.fit_transform(testFeatures)
 
+    # Transform features to improve clustering performance
+    testFeatures = transformFeatures(testFeatures)
+
+    # If training data is not given, use k-means clustering to predict the labels
     if trainFeatures is None or trainLabels is None:
         km = KMeans(n_clusters=numVessels, init='k-means++', n_init=10, random_state=100)
         return km.fit_predict(testFeatures)
@@ -27,6 +31,9 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None, trainLabels=None)
     # Otherwise use the labels to train a random forest classifier
     # and predict the labels of the test data
     trainFeatures = scaler.fit_transform(trainFeatures)
+    trainFeatures = transformFeatures(trainFeatures)
+
+    # Train random forest classifier
     rf = RandomForestClassifier(n_estimators=100, random_state=100)
     rf.fit(trainFeatures, trainLabels)
     return rf.predict(testFeatures)
@@ -38,34 +45,49 @@ def predictWithoutK(testFeatures, trainFeatures=None, trainLabels=None):
     return predictWithK(testFeatures=testFeatures, numVessels=20, trainFeatures=trainFeatures, trainLabels=trainLabels)
 
 
-def convertToLabels(features):
-    sog_index = 3
-    cog_index = 4
+def transformFeatures(features):
+    """
+    Transform features to improve clustering performance. The initial features are:
+    Timestamp - hh:mm:ss
+    Latitude - degrees
+    Longitude - degrees
+    SOG - speed over ground
+    COG - course over ground
+    :param features: the features to transform
+    :return: the transformed features
+    """
+    # TODO: Implement feature transformation
+    new_labels = ['latitude', 'longitude', 'x_velo', 'y_velo', 'hours', 'minutes', 'seconds', 'bearing', 'SOW',
+                  'lee_way']
+    new_features = [[], [], [], [], [], [], []]
 
-    if features is not None:
-        for i in range(len(features)):
-            sog = features[i, sog_index]
-            cog = (features[i, cog_index] / 10.0) * math.pi / 180.0
+    for i in range(features.shape[0]):
+        # Add latitude and longitude
+        new_features[0].append(features[i, 0])
+        new_features[1].append(features[i, 1])
 
-            vx = sog * math.cos(cog)
-            vy = sog * math.sin(cog)
+        # Convert SOG and COG to x and y velocities
+        sog = features[i, 0]
+        cog = features[i, 1]
+        new_features[2].append(sog * math.cos(cog))
+        new_features[3].append(sog * math.sin(cog))
 
-            features[i, sog_index] = vx
-            features[i, cog_index] = vy
+        # Convert timestamp to hours, minutes, and seconds
+        timestamp = features[i, 2]
+        hours = timestamp // 3600
+        minutes = (timestamp % 3600) // 60
+        seconds = timestamp % 60
+        new_features[4].append(hours)
+        new_features[5].append(minutes)
+        new_features[6].append(seconds)
 
-    return features
+    return np.array(new_features).T
 
 
 def testTrained(features, labels):
     print('With Train Features/Labels:')
     # Split data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.2, random_state=42)
-
-    '''
-    # Convert features to labels
-    X_train = convertToLabels(X_train)
-    X_test = convertToLabels(X_test)
-    '''
 
     # Run prediction algorithms and check accuracy
     # Prediction with specified number of vessels
