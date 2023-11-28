@@ -25,7 +25,7 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None, trainLabels=None)
 
     # If training data is not given, use k-means clustering to predict the labels
     if trainFeatures is None or trainLabels is None:
-        km = KMeans(n_clusters=numVessels, init='k-means++', n_init=10, random_state=100, tol=2e-4)
+        km = KMeans(n_clusters=numVessels, init='k-means++', n_init=10, random_state=100)
         return km.fit_predict(testFeatures)
 
     # Otherwise use the labels to train a random forest classifier
@@ -34,7 +34,7 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None, trainLabels=None)
     trainFeatures = transformFeatures(trainFeatures)
 
     # Train random forest classifier
-    rf = RandomForestClassifier(n_estimators=100, random_state=100, min_samples_split=50, criterion='log_loss')
+    rf = RandomForestClassifier(n_estimators=100, random_state=100)
     rf.fit(trainFeatures, trainLabels)
     return rf.predict(testFeatures)
 
