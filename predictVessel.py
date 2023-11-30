@@ -49,7 +49,7 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None, trainLabels=None)
     trainFeatures = transformFeatures(trainFeatures)
 
     # Train random forest classifier
-    rf = RandomForestClassifier(n_estimators=100, random_state=100)
+    rf = RandomForestClassifier(n_estimators=100, random_state=100, min_samples_split=50, criterion='log_loss')
     rf.fit(trainFeatures, trainLabels)
     return rf.predict(testFeatures)
 
