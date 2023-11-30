@@ -21,7 +21,7 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None, trainLabels=None)
     testFeatures = scaler.fit_transform(testFeatures)
 
     # Transform features to improve clustering performance
-    testFeatures = transformFeatures(testFeatures)
+    #testFeatures = transformFeatures(testFeatures)
 
     # If training data is not given, use k-means clustering to predict the labels
     if trainFeatures is None or trainLabels is None:
@@ -31,7 +31,7 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None, trainLabels=None)
     # Otherwise use the labels to train a random forest classifier
     # and predict the labels of the test data
     trainFeatures = scaler.fit_transform(trainFeatures)
-    trainFeatures = transformFeatures(trainFeatures)
+    #trainFeatures = transformFeatures(trainFeatures)
 
     # Train random forest classifier
     rf = RandomForestClassifier(n_estimators=100, random_state=100, min_samples_split=50, criterion='log_loss')
