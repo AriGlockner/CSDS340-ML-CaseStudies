@@ -21,7 +21,7 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None, trainLabels=None)
 
     # Transform features to improve clustering performance
     # testFeatures = transformFeatures(testFeatures)
-
+    # foo
     # If training data is not given, use k-means clustering to predict the labels
     if trainFeatures is None or trainLabels is None:
         testFeatures = transformFeatures(testFeatures)
