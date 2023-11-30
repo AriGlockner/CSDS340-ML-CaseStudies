@@ -4,13 +4,12 @@ Vessel prediction using k-means clustering on standardized features. If the
 number of vessels is not specified, assume 20 vessels.
 @author: Kevin S. Xu
 """
-import math
-
 import numpy as np
 import matplotlib.pyplot as plt
+import geopandas as gpd
 from sklearn.metrics import adjusted_rand_score
 from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, AgglomerativeClustering
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 
@@ -21,11 +20,12 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None, trainLabels=None)
     testFeatures = scaler.fit_transform(testFeatures)
 
     # Transform features to improve clustering performance
-    #testFeatures = transformFeatures(testFeatures)
+    # testFeatures = transformFeatures(testFeatures)
 
     # If training data is not given, use k-means clustering to predict the labels
     if trainFeatures is None or trainLabels is None:
-        km = KMeans(n_clusters=numVessels, init='k-means++', n_init=10, random_state=100, tol=2e-4)
+        testFeatures = transformFeatures(testFeatures)
+        km = KMeans(n_clusters=numVessels, init='k-means++', n_init=10, random_state=100)
         return km.fit_predict(testFeatures)
 
     # Otherwise use the labels to train a random forest classifier
@@ -45,7 +45,7 @@ def predictWithoutK(testFeatures, trainFeatures=None, trainLabels=None):
     return predictWithK(testFeatures=testFeatures, numVessels=20, trainFeatures=trainFeatures, trainLabels=trainLabels)
 
 
-def transformFeatures(features):
+def transformFeatures(old_features, numVessels=20):
     """
     Transform features to improve clustering performance. The initial features are:
     Timestamp - hh:mm:ss
@@ -53,35 +53,26 @@ def transformFeatures(features):
     Longitude - degrees
     SOG - speed over ground
     COG - course over ground
-    :param features: the features to transform
+    :param old_features: the features to transform
+    :param numVessels: the number of vessels
     :return: the transformed features
     """
-    # TODO: Implement feature transformation
-    new_labels = ['latitude', 'longitude', 'x_velo', 'y_velo', 'hours', 'minutes', 'seconds', 'bearing', 'SOW',
-                  'lee_way']
-    new_features = [[], [], [], [], [], [], []]
+    # Extract the timestamp from the features
+    timestamp = old_features[:, 0]
+    other_features = old_features[:, 1:]
 
-    for i in range(features.shape[0]):
-        # Add latitude and longitude
-        new_features[0].append(features[i, 0])
-        new_features[1].append(features[i, 1])
+    # Agglomerative clustering on the timestamp
+    agg = AgglomerativeClustering(n_clusters=numVessels, linkage='ward')
+    agg.fit(timestamp.reshape(-1, 1))
+    agg_labels = agg.labels_
 
-        # Convert SOG and COG to x and y velocities
-        sog = features[i, 0]
-        cog = features[i, 1]
-        new_features[2].append(sog * math.cos(cog))
-        new_features[3].append(sog * math.sin(cog))
+    # Convert the labels to one-hot encoding
+    agg_labels = np.eye(numVessels)[agg_labels]
 
-        # Convert timestamp to hours, minutes, and seconds
-        timestamp = features[i, 2]
-        hours = timestamp // 3600
-        minutes = (timestamp % 3600) // 60
-        seconds = timestamp % 60
-        new_features[4].append(hours)
-        new_features[5].append(minutes)
-        new_features[6].append(seconds)
+    # Concatenate the one-hot encoding with the other features
+    new_features = np.concatenate((agg_labels, other_features), axis=1)
 
-    return np.array(new_features).T
+    return new_features
 
 
 def testTrained(features, labels):
@@ -137,7 +128,7 @@ def testUntrained(features, labels):
 
 # Run this code only if being used as a script, not being imported
 if __name__ == "__main__":
-    from utils import loadData, plotVesselTracks
+    from utils import loadData, plotVesselTracks, convertTimeToSec
 
     data = loadData('set1.csv')
     features = data[:, 2:]
