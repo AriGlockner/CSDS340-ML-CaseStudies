@@ -4,9 +4,9 @@ Vessel prediction using k-means clustering on standardized features. If the
 number of vessels is not specified, assume 20 vessels.
 @author: Kevin S. Xu
 """
-import math
 import numpy as np
 import matplotlib.pyplot as plt
+import geopandas as gpd
 from sklearn.metrics import adjusted_rand_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans, AgglomerativeClustering
@@ -14,6 +14,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 
 weight_distances = []
+
 
 def compute_weight_distances(features):
     """
@@ -59,23 +60,6 @@ def predictWithoutK(testFeatures, trainFeatures=None, trainLabels=None):
     return predictWithK(testFeatures=testFeatures, numVessels=20, trainFeatures=trainFeatures, trainLabels=trainLabels)
 
 
-def calculate_cluster_distance(Cluster1, Cluster2):
-    """
-    Calculate the distance between two clusters.
-    :param Cluster1: cluster 1
-    :param Cluster2: cluster 2
-    :return: the distance between two clusters
-    """
-    # Calculate the distance between each pair of features
-    distances = []
-
-    # Calculate the distance between each feature
-    for i in range(len(Cluster1)):
-        distances.append(abs(Cluster1[i] - Cluster2[i]) / weight_distances[i])
-
-    # Return the sum of the distances
-    return sum(distances)
-
 def transformFeatures(old_features, numVessels=20):
     """
     Transform features to improve clustering performance. The initial features are:
@@ -96,49 +80,48 @@ def transformFeatures(old_features, numVessels=20):
     timestamp_clustering = AgglomerativeClustering(n_clusters=None, distance_threshold=60)
     timestamp_labels = timestamp_clustering.fit_predict(timestamp)
 
-    # Sort the features by the timestamp labels
-    sorted_features = old_features[timestamp_labels.argsort()]
+    # Create a dictionary to store the clusters
+    timestamp_clusters = {}
 
-    # For each timestamp label, use Agglomerative Clustering to cluster the features
-    transformed_clusters = []
-    for i in range(numVessels):
-        # Extract the features with the current timestamp label
-        current_features = sorted_features[timestamp_labels == i]
+    # Add each timestamp to its cluster
+    for i in range(len(timestamp_labels)):
+        if timestamp_labels[i] not in timestamp_clusters:
+            timestamp_clusters[timestamp_labels[i]] = [timestamp[i]]
+        else:
+            timestamp_clusters[timestamp_labels[i]].append(timestamp[i])
 
-        # Use Agglomerative Clustering to cluster the features
-        # TODO: Maybe split features after implementation
-        clustering = AgglomerativeClustering(n_clusters=None, distance_threshold=1)
-        vessel_labels = clustering.fit_predict(current_features)
+    '''
+    We are now going to use nested Agglomerative Clustering. The first level of clustering will be done on the
+    timestamp clusters. The second level of clustering will be done on the remaining features. The number of clusters
+    for the second level of clustering will be the number of vessels. The features will be clustered by the mean
+    distance between the features and the cluster center. The features will be weighted by the weight distances.
+    '''
 
-        # Sort the features by the vessel labels
-        sorted_vessel_features = current_features[vessel_labels.argsort()]
-        transformed_clusters.append(sorted_vessel_features)
+    # Create an array to store the transformed features
+    transformed_features = np.zeros_like(old_features)
 
-    # Concatenate the transformed clusters
-    transformed_features = np.concatenate(transformed_clusters)
+    # Iterate through each timestamp cluster
+    for cluster_label, timestamps_in_cluster in timestamp_clusters.items():
+        # Filter features that belong to the current timestamp cluster
+        cluster_mask = np.isin(timestamp, timestamps_in_cluster)
+        cluster_features = []
+        for i in range(len(cluster_mask)):
+            if cluster_mask[i].any():
+                cluster_features.append(old_features[i])
 
-    # Merge the most similar clusters together until there are numVessels clusters
-    while len(transformed_clusters) > numVessels:
-        # Calculate the distance between each pair of clusters
-        distances = []
-        for i in range(len(transformed_clusters)):
-            for j in range(i + 1, len(transformed_clusters)):
-                # Calculate the distance between the clusters
-                distance = calculate_cluster_distance(transformed_clusters[i], transformed_clusters[j])
-                distances.append((distance, i, j))
+        # Extract the remaining features for the second level of clustering
+        remaining_features = cluster_features
 
-        # Sort the distances
-        distances.sort()
+        # Use Agglomerative Clustering for the second level on the remaining features
+        feature_clustering = AgglomerativeClustering(n_clusters=numVessels)
+        feature_labels = feature_clustering.fit_predict(remaining_features)
 
-        # Merge the two closest clusters
-        closest_distance, closest_i, closest_j = distances[0]
-        transformed_clusters[closest_i] = np.concatenate((transformed_clusters[closest_i], transformed_clusters[closest_j]))
-        del transformed_clusters[closest_j]
+        # Iterate through each feature cluster and assign the mean value to its members
+        for i in range(numVessels):
+            feature_cluster_mask = feature_labels == i
+            feature_cluster_mean = np.mean(cluster_features, axis=0)
+            transformed_features[feature_cluster_mask] = feature_cluster_mean
 
-    # Concatenate the transformed clusters
-    transformed_features = np.concatenate(transformed_clusters)
-
-    # Return the transformed features
     return transformed_features
 
 
@@ -208,7 +191,7 @@ if __name__ == "__main__":
     # %% Run prediction algorithms and check accuracy
 
     predVesselsWithK, predVesselsWithoutK = testUntrained(features, labels)
-    predVesselsWithK, predVesselsWithoutK = testTrained(features, labels)
+    # predVesselsWithK, predVesselsWithoutK = testTrained(features, labels)
 
     # %% Plot vessel tracks colored by prediction and actual labels
     plotVesselTracks(features[:, [2, 1]], predVesselsWithK)
