@@ -25,13 +25,29 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None, trainLabels=None)
     # If training data is not given, use k-means clustering to predict the labels
     if trainFeatures is None or trainLabels is None:
         testFeatures = transformFeatures(testFeatures)
+
+        # Extract the timestamp from the features
+        timestamp = testFeatures[:, 0]
+        other_features = testFeatures[:, 1:]
+
+        # Agglomerative clustering on the timestamp
+        agg = AgglomerativeClustering(n_clusters=numVessels, linkage='ward')
+        agg.fit(timestamp.reshape(-1, 1))
+        agg_labels = agg.labels_
+
+        # Convert the labels to one-hot encoding
+        agg_labels = np.eye(numVessels)[agg_labels]
+
+        # Concatenate the one-hot encoding with the other features
+        testFeatures = np.concatenate((agg_labels, other_features), axis=1)
+
         km = KMeans(n_clusters=numVessels, init='k-means++', n_init=10, random_state=100)
         return km.fit_predict(testFeatures)
 
     # Otherwise use the labels to train a random forest classifier
     # and predict the labels of the test data
     trainFeatures = scaler.fit_transform(trainFeatures)
-    #trainFeatures = transformFeatures(trainFeatures)
+    # trainFeatures = transformFeatures(trainFeatures)
 
     # Train random forest classifier
     rf = RandomForestClassifier(n_estimators=100, random_state=100, min_samples_split=50, criterion='log_loss')
@@ -57,22 +73,14 @@ def transformFeatures(old_features, numVessels=20):
     :param numVessels: the number of vessels
     :return: the transformed features
     """
-    # Extract the timestamp from the features
-    timestamp = old_features[:, 0]
-    other_features = old_features[:, 1:]
+    for i in range(old_features.shape[0]):
+        # Convert the SOG and COG to x and y components
+        sog = old_features[i, 3]
+        cog = old_features[i, 4]
+        old_features[i, 3] = sog * np.cos(cog)
+        old_features[i, 4] = sog * np.sin(cog)
 
-    # Agglomerative clustering on the timestamp
-    agg = AgglomerativeClustering(n_clusters=numVessels, linkage='ward')
-    agg.fit(timestamp.reshape(-1, 1))
-    agg_labels = agg.labels_
-
-    # Convert the labels to one-hot encoding
-    agg_labels = np.eye(numVessels)[agg_labels]
-
-    # Concatenate the one-hot encoding with the other features
-    new_features = np.concatenate((agg_labels, other_features), axis=1)
-
-    return new_features
+    return old_features
 
 
 def testTrained(features, labels):
