@@ -5,23 +5,37 @@ number of vessels is not specified, assume 20 vessels.
 @author: Kevin S. Xu
 """
 import math
-
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import adjusted_rand_score
 from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, AgglomerativeClustering
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 
+weight_distances = []
+
+def compute_weight_distances(features):
+    """
+    Sets the weight distances for the features.
+    :param features: the features to set the weight distances for
+    :return: Nothing. Sets the weight distances for the features.
+    """
+    weight_distances.clear()
+
+    # Calculate the distance between each pair of features
+    for i in range(1, len(features[0])):
+        weight_distances.append(max(features[:, i]) - min(features[:, i]))
+
 
 def predictWithK(testFeatures, numVessels, trainFeatures=None, trainLabels=None):
+    compute_weight_distances(testFeatures)
     # Unsupervised prediction, so training data is unused
     scaler = StandardScaler()
     testFeatures = scaler.fit_transform(testFeatures)
 
     # Transform features to improve clustering performance
-    #testFeatures = transformFeatures(testFeatures)
+    testFeatures = transformFeatures(testFeatures)
 
     # If training data is not given, use k-means clustering to predict the labels
     if trainFeatures is None or trainLabels is None:
@@ -31,7 +45,7 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None, trainLabels=None)
     # Otherwise use the labels to train a random forest classifier
     # and predict the labels of the test data
     trainFeatures = scaler.fit_transform(trainFeatures)
-    #trainFeatures = transformFeatures(trainFeatures)
+    trainFeatures = transformFeatures(trainFeatures)
 
     # Train random forest classifier
     rf = RandomForestClassifier(n_estimators=100, random_state=100)
@@ -45,7 +59,24 @@ def predictWithoutK(testFeatures, trainFeatures=None, trainLabels=None):
     return predictWithK(testFeatures=testFeatures, numVessels=20, trainFeatures=trainFeatures, trainLabels=trainLabels)
 
 
-def transformFeatures(features):
+def calculate_cluster_distance(Cluster1, Cluster2):
+    """
+    Calculate the distance between two clusters.
+    :param Cluster1: cluster 1
+    :param Cluster2: cluster 2
+    :return: the distance between two clusters
+    """
+    # Calculate the distance between each pair of features
+    distances = []
+
+    # Calculate the distance between each feature
+    for i in range(len(Cluster1)):
+        distances.append(abs(Cluster1[i] - Cluster2[i]) / weight_distances[i])
+
+    # Return the sum of the distances
+    return sum(distances)
+
+def transformFeatures(old_features, numVessels=20):
     """
     Transform features to improve clustering performance. The initial features are:
     Timestamp - hh:mm:ss
@@ -53,35 +84,62 @@ def transformFeatures(features):
     Longitude - degrees
     SOG - speed over ground
     COG - course over ground
-    :param features: the features to transform
+    :param old_features: the features to transform
+    :param numVessels: the number of vessels
     :return: the transformed features
     """
-    # TODO: Implement feature transformation
-    new_labels = ['latitude', 'longitude', 'x_velo', 'y_velo', 'hours', 'minutes', 'seconds', 'bearing', 'SOW',
-                  'lee_way']
-    new_features = [[], [], [], [], [], [], []]
+    # Extract the timestamp feature from the features and convert to seconds
+    timestamp = np.array([(time // 60) + (((time // 60) % 60) * 60) + (time // 3600) * 3600
+                          for time in old_features[:, 0:]])
 
-    for i in range(features.shape[0]):
-        # Add latitude and longitude
-        new_features[0].append(features[i, 0])
-        new_features[1].append(features[i, 1])
+    # Use Agglomerative Clustering to cluster the timestamps
+    timestamp_clustering = AgglomerativeClustering(n_clusters=None, distance_threshold=60)
+    timestamp_labels = timestamp_clustering.fit_predict(timestamp)
 
-        # Convert SOG and COG to x and y velocities
-        sog = features[i, 0]
-        cog = features[i, 1]
-        new_features[2].append(sog * math.cos(cog))
-        new_features[3].append(sog * math.sin(cog))
+    # Sort the features by the timestamp labels
+    sorted_features = old_features[timestamp_labels.argsort()]
 
-        # Convert timestamp to hours, minutes, and seconds
-        timestamp = features[i, 2]
-        hours = timestamp // 3600
-        minutes = (timestamp % 3600) // 60
-        seconds = timestamp % 60
-        new_features[4].append(hours)
-        new_features[5].append(minutes)
-        new_features[6].append(seconds)
+    # For each timestamp label, use Agglomerative Clustering to cluster the features
+    transformed_clusters = []
+    for i in range(numVessels):
+        # Extract the features with the current timestamp label
+        current_features = sorted_features[timestamp_labels == i]
 
-    return np.array(new_features).T
+        # Use Agglomerative Clustering to cluster the features
+        # TODO: Maybe split features after implementation
+        clustering = AgglomerativeClustering(n_clusters=None, distance_threshold=1)
+        vessel_labels = clustering.fit_predict(current_features)
+
+        # Sort the features by the vessel labels
+        sorted_vessel_features = current_features[vessel_labels.argsort()]
+        transformed_clusters.append(sorted_vessel_features)
+
+    # Concatenate the transformed clusters
+    transformed_features = np.concatenate(transformed_clusters)
+
+    # Merge the most similar clusters together until there are numVessels clusters
+    while len(transformed_clusters) > numVessels:
+        # Calculate the distance between each pair of clusters
+        distances = []
+        for i in range(len(transformed_clusters)):
+            for j in range(i + 1, len(transformed_clusters)):
+                # Calculate the distance between the clusters
+                distance = calculate_cluster_distance(transformed_clusters[i], transformed_clusters[j])
+                distances.append((distance, i, j))
+
+        # Sort the distances
+        distances.sort()
+
+        # Merge the two closest clusters
+        closest_distance, closest_i, closest_j = distances[0]
+        transformed_clusters[closest_i] = np.concatenate((transformed_clusters[closest_i], transformed_clusters[closest_j]))
+        del transformed_clusters[closest_j]
+
+    # Concatenate the transformed clusters
+    transformed_features = np.concatenate(transformed_clusters)
+
+    # Return the transformed features
+    return transformed_features
 
 
 def testTrained(features, labels):
@@ -137,7 +195,7 @@ def testUntrained(features, labels):
 
 # Run this code only if being used as a script, not being imported
 if __name__ == "__main__":
-    from utils import loadData, plotVesselTracks
+    from utils import loadData, plotVesselTracks, convertTimeToSec
 
     data = loadData('set1.csv')
     features = data[:, 2:]
