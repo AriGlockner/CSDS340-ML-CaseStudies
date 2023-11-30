@@ -73,7 +73,7 @@ def transformFeatures(old_features, numVessels=20):
     :return: the transformed features
     """
     # Extract the timestamp feature from the features and convert to seconds
-    timestamp = np.array([(time // 60) + (((time // 60) % 60) * 60) + (time // 3600) * 3600
+    timestamp = np.array([(time % 60) + (((time // 60) % 60) * 60) + (time // 3600) * 3600
                           for time in old_features[:, 0:]])
 
     # Use Agglomerative Clustering to cluster the timestamps
