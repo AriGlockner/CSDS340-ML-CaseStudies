@@ -6,7 +6,6 @@ number of vessels is not specified, assume 20 vessels.
 """
 import numpy as np
 import matplotlib.pyplot as plt
-import geopandas as gpd
 from sklearn.metrics import adjusted_rand_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans, AgglomerativeClustering
