@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import adjusted_rand_score
 from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans, AgglomerativeClustering
+from sklearn.cluster import KMeans, DBSCAN, OPTICS
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 
@@ -29,10 +29,13 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None, trainLabels=None)
         timestamp = testFeatures[:, 0]
         other_features = testFeatures[:, 1:]
 
-        # Agglomerative clustering on the timestamp
-        agg = AgglomerativeClustering(n_clusters=numVessels, linkage='ward')
-        agg.fit(timestamp.reshape(-1, 1))
-        agg_labels = agg.labels_
+        # DBSCAN clustering on the timestamp
+        clustering = DBSCAN(eps=0.5, min_samples=10, metric='euclidean', algorithm='auto', leaf_size=30, p=None,
+                            n_jobs=None)
+        # OPTICS(min_samples=10, xi=.05, min_cluster_size=.05) # Not bad, not best
+
+        clustering.fit(timestamp.reshape(-1, 1))
+        agg_labels = clustering.labels_
 
         # Convert the labels to one-hot encoding
         agg_labels = np.eye(numVessels)[agg_labels]
@@ -72,6 +75,7 @@ def transformFeatures(old_features, numVessels=20):
     :param numVessels: the number of vessels
     :return: the transformed features
     """
+    '''
     for i in range(old_features.shape[0]):
         # Convert the SOG and COG to x and y components
         sog = old_features[i, 3]
@@ -80,6 +84,21 @@ def transformFeatures(old_features, numVessels=20):
         old_features[i, 4] = sog * np.sin(cog)
 
     return old_features
+    '''
+    newFeatures = np.zeros((old_features.shape[0], 5))
+    for i in range(old_features.shape[0]):
+        # Move the timestamp, latitude, and longitude to the front
+        newFeatures[i, 0] = old_features[i, 0]
+        newFeatures[i, 1] = old_features[i, 1]
+        newFeatures[i, 2] = old_features[i, 2]
+
+        # Convert the SOG and COG to x and y components
+        sog = old_features[i, 3]
+        cog = old_features[i, 4]
+        newFeatures[i, 3] = sog * np.cos(cog)
+        newFeatures[i, 4] = sog * np.sin(cog)
+
+    return newFeatures
 
 
 def testTrained(features, labels):
