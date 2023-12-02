@@ -12,6 +12,7 @@ from sklearn.metrics import adjusted_rand_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 
+
 def predictWithK(testFeatures, numVessels, trainFeatures=None, 
                  trainLabels=None):
     # Unsupervised prediction, so training data is unused
@@ -24,11 +25,13 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None,
     
     return predVessels
 
+
 def predictWithoutK(testFeatures, trainFeatures=None, trainLabels=None):
     # Unsupervised prediction, so training data is unused
     
     # Arbitrarily assume 20 vessels
     return predictWithK(testFeatures, 20, trainFeatures, trainLabels)
+
 
 # Run this code only if being used as a script, not being imported
 if __name__ == "__main__":
