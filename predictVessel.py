@@ -44,7 +44,7 @@ def predictWithoutK(testFeatures, trainFeatures=None, trainLabels=None):
     testFeatures = scaler.fit_transform(testFeatures)
     # TODO: Adjust arbitrary values
     # Arbitrary values for eps and min_samples
-    dbscan = DBSCAN(eps=0.2, min_samples=20)
+    dbscan = DBSCAN(eps=0.236, min_samples=20)
     return dbscan.fit_predict(testFeatures)
 
 
