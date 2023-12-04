@@ -6,7 +6,6 @@ number of vessels is not specified, assume 20 vessels.
 @author: Kevin S. Xu
 """
 
-import hdbscan
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import adjusted_rand_score
@@ -19,31 +18,12 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None,
     scaler = StandardScaler()
     testFeatures = scaler.fit_transform(testFeatures)
 
-    '''
-    # Fit a HDBSCAN model
-    clusterer = hdbscan.HDBSCAN(min_cluster_size=20, min_samples=20, gen_min_span_tree=True)
-    clusterer.fit(testFeatures)
-
-    # If the number of clusters is less than the number of vessels, return the labels
-    if np.unique(clusterer.labels_).size <= numVessels:
-        return clusterer.labels_
-
-    # Ensure that no more than numVessels clusters are found
-    unique_labels, counts = np.unique(clusterer.labels_, return_counts=True)
-    if len(unique_labels) > numVessels:
-        # Identify the largest numVessels clusters
-        largest_clusters = np.argsort(counts[unique_labels])[::-1][:numVessels]
-
-        # Assign points outside the largest clusters to a new cluster label (-1)
-        mask = np.isin(clusterer.labels_, largest_clusters, invert=True)
-        clusterer.labels_[mask] = -1
-    return clusterer.labels_
-    '''
-
+    # Initialize number of clusters to be greater than the number of vessels
     n_clusters = numVessels + 1
     pred_labels = None
-    eps = 1.0
+    eps = 0.236
 
+    # Iterate until the number of clusters is equal to the number of vessels
     while n_clusters > numVessels:
         # Fit a DBSCAN model
         dbscan = DBSCAN(eps=eps, min_samples=20)
@@ -51,9 +31,7 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None,
         n_clusters = np.unique(pred_labels).size
 
         # Decrease the epsilon value if the number of clusters is too large
-        if n_clusters > numVessels:
-            eps -= 0.01
-
+        eps += 0.01
     return pred_labels
 
 
