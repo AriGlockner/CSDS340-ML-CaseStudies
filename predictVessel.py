@@ -6,24 +6,36 @@ number of vessels is not specified, assume 20 vessels.
 @author: Kevin S. Xu
 """
 
+import hdbscan
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import adjusted_rand_score
 from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import DBSCAN, KMeans, AgglomerativeClustering, AffinityPropagation, Birch, MiniBatchKMeans, \
-    OPTICS, cluster_optics_dbscan
-
+from sklearn.cluster import DBSCAN, KMeans, OPTICS, cluster_optics_dbscan
 
 def predictWithK(testFeatures, numVessels, trainFeatures=None, 
                  trainLabels=None):
-    # Unsupervised prediction, so training data is unused
-    
+    # Preprocess data
     scaler = StandardScaler()
     testFeatures = scaler.fit_transform(testFeatures)
 
-    # Run MiniBatchKMeans with specified number of clusters
-    kmeans = MiniBatchKMeans(n_clusters=numVessels, random_state=1)
-    return kmeans.fit_predict(testFeatures)
+    # Fit a HDBSCAN model
+    clusterer = hdbscan.HDBSCAN(min_cluster_size=numVessels, min_samples=20, gen_min_span_tree=True)
+    clusterer.fit(testFeatures)
+
+    # Ensure that no more than numVessels clusters are found
+    unique_labels, counts = np.unique(clusterer.labels_, return_counts=True)
+    if len(unique_labels) > numVessels:
+        # Identify the largest numVessels clusters
+        largest_clusters = np.argsort(counts[unique_labels])[::-1][:numVessels]
+
+        # Assign points outside the largest clusters to a new cluster label (-1)
+        mask = np.isin(clusterer.labels_, largest_clusters, invert=True)
+        clusterer.labels_[mask] = -1
+
+    print(f'Number of Vessels: {numVessels} \n Number of Clusters: {len(np.unique(clusterer.labels_))}')
+    return clusterer.labels_
+
 
 
 def predictWithoutK(testFeatures, trainFeatures=None, trainLabels=None):
