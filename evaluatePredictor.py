@@ -27,6 +27,7 @@ predVesselsWithK = predictWithK(testFeatures.copy(), numVessels, trainFeatures.c
 # Rand index to -infinity to indicate an invalid result (0 accuracy score)
 
 if np.unique(predVesselsWithK).size > numVessels:
+    print(f'Number of predicted vessels ({np.unique(predVesselsWithK).size}) ' + f'is greater than K ({numVessels})')
     ariWithK = -np.inf
 else:
     ariWithK = adjusted_rand_score(testLabels, predVesselsWithK)

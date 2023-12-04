@@ -10,7 +10,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import adjusted_rand_score
 from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
+from sklearn.cluster import DBSCAN, KMeans, AgglomerativeClustering, AffinityPropagation, Birch, MiniBatchKMeans, \
+    OPTICS, cluster_optics_dbscan
 
 
 def predictWithK(testFeatures, numVessels, trainFeatures=None, 
@@ -19,18 +20,21 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None,
     
     scaler = StandardScaler()
     testFeatures = scaler.fit_transform(testFeatures)
-    km = KMeans(n_clusters=numVessels, init='k-means++', n_init=10, 
-                random_state=100)
-    predVessels = km.fit_predict(testFeatures)
-    
-    return predVessels
+
+    # Run MiniBatchKMeans with specified number of clusters
+    kmeans = MiniBatchKMeans(n_clusters=numVessels, random_state=1)
+    return kmeans.fit_predict(testFeatures)
 
 
 def predictWithoutK(testFeatures, trainFeatures=None, trainLabels=None):
     # Unsupervised prediction, so training data is unused
     
-    # Arbitrarily assume 20 vessels
-    return predictWithK(testFeatures, 20, trainFeatures, trainLabels)
+    scaler = StandardScaler()
+    testFeatures = scaler.fit_transform(testFeatures)
+    # TODO: Adjust arbitrary values
+    # Arbitrary values for eps and min_samples
+    dbscan = DBSCAN(eps=0.5, min_samples=20)
+    return dbscan.fit_predict(testFeatures)
 
 
 # Run this code only if being used as a script, not being imported
