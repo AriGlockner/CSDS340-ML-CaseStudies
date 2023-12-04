@@ -31,7 +31,7 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None,
         pred_labels = model.fit_predict(testFeatures)
         n_clusters = np.unique(pred_labels).size
 
-        # Decrease the epsilon value if the number of clusters is too large
+        # Increase the epsilon value if the number of clusters is too large
         eps += 0.01
 
     # Return the predicted labels
