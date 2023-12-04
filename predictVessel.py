@@ -19,9 +19,14 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None,
     scaler = StandardScaler()
     testFeatures = scaler.fit_transform(testFeatures)
 
+    '''
     # Fit a HDBSCAN model
-    clusterer = hdbscan.HDBSCAN(min_cluster_size=numVessels, min_samples=20, gen_min_span_tree=True)
+    clusterer = hdbscan.HDBSCAN(min_cluster_size=20, min_samples=20, gen_min_span_tree=True)
     clusterer.fit(testFeatures)
+
+    # If the number of clusters is less than the number of vessels, return the labels
+    if np.unique(clusterer.labels_).size <= numVessels:
+        return clusterer.labels_
 
     # Ensure that no more than numVessels clusters are found
     unique_labels, counts = np.unique(clusterer.labels_, return_counts=True)
@@ -32,20 +37,33 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None,
         # Assign points outside the largest clusters to a new cluster label (-1)
         mask = np.isin(clusterer.labels_, largest_clusters, invert=True)
         clusterer.labels_[mask] = -1
-
     return clusterer.labels_
+    '''
+
+    n_clusters = numVessels + 1
+    pred_labels = None
+    eps = 1.0
+
+    while n_clusters > numVessels:
+        # Fit a DBSCAN model
+        dbscan = DBSCAN(eps=eps, min_samples=20)
+        pred_labels = dbscan.fit_predict(testFeatures)
+        n_clusters = np.unique(pred_labels).size
+
+        # Decrease the epsilon value if the number of clusters is too large
+        if n_clusters > numVessels:
+            eps -= 0.01
+
+    return pred_labels
 
 
 
 def predictWithoutK(testFeatures, trainFeatures=None, trainLabels=None):
-    # Unsupervised prediction, so training data is unused
-    
-    scaler = StandardScaler()
-    testFeatures = scaler.fit_transform(testFeatures)
-    # TODO: Adjust arbitrary values
-    # Arbitrary values for eps and min_samples
-    dbscan = DBSCAN(eps=0.236, min_samples=20)
-    return dbscan.fit_predict(testFeatures)
+    # Scale the data
+    testFeatures = StandardScaler().fit_transform(testFeatures)
+
+    # Values determined by testing and iteration
+    return DBSCAN(eps=0.236, min_samples=20).fit_predict(testFeatures)
 
 
 # Run this code only if being used as a script, not being imported
