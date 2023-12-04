@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import adjusted_rand_score
 from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import DBSCAN, KMeans, OPTICS, cluster_optics_dbscan
+from sklearn.cluster import DBSCAN
 
 def predictWithK(testFeatures, numVessels, trainFeatures=None, 
                  trainLabels=None):
@@ -33,7 +33,6 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None,
         mask = np.isin(clusterer.labels_, largest_clusters, invert=True)
         clusterer.labels_[mask] = -1
 
-    print(f'Number of Vessels: {numVessels} \n Number of Clusters: {len(np.unique(clusterer.labels_))}')
     return clusterer.labels_
 
 
@@ -45,7 +44,7 @@ def predictWithoutK(testFeatures, trainFeatures=None, trainLabels=None):
     testFeatures = scaler.fit_transform(testFeatures)
     # TODO: Adjust arbitrary values
     # Arbitrary values for eps and min_samples
-    dbscan = DBSCAN(eps=0.5, min_samples=20)
+    dbscan = DBSCAN(eps=0.2, min_samples=20)
     return dbscan.fit_predict(testFeatures)
 
 
