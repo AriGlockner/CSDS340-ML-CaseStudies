@@ -12,6 +12,7 @@ from sklearn.metrics import adjusted_rand_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import DBSCAN
 
+
 def predictWithK(testFeatures, numVessels, trainFeatures=None, 
                  trainLabels=None):
     # Preprocess data
@@ -26,22 +27,25 @@ def predictWithK(testFeatures, numVessels, trainFeatures=None,
     # Iterate until the number of clusters is equal to the number of vessels
     while n_clusters > numVessels:
         # Fit a DBSCAN model
-        dbscan = DBSCAN(eps=eps, min_samples=20)
-        pred_labels = dbscan.fit_predict(testFeatures)
+        model = DBSCAN(eps=eps, min_samples=20)
+        pred_labels = model.fit_predict(testFeatures)
         n_clusters = np.unique(pred_labels).size
 
         # Decrease the epsilon value if the number of clusters is too large
         eps += 0.01
+
+    # Return the predicted labels
     return pred_labels
 
 
-
 def predictWithoutK(testFeatures, trainFeatures=None, trainLabels=None):
-    # Scale the data
-    testFeatures = StandardScaler().fit_transform(testFeatures)
+    # Preprocess data
+    scaler = StandardScaler()
+    testFeatures = scaler.fit_transform(testFeatures)
 
     # Values determined by testing and iteration
-    return DBSCAN(eps=0.236, min_samples=20).fit_predict(testFeatures)
+    model = DBSCAN(eps=0.236, min_samples=20)
+    return model.fit_predict(testFeatures)
 
 
 # Run this code only if being used as a script, not being imported
