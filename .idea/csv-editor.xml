@@ -10,6 +10,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/set2.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/set2noVID.csv">
           <value>
             <Attribute>
